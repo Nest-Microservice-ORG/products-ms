@@ -1,0 +1,50 @@
+import { Controller, ParseIntPipe } from '@nestjs/common';
+import { ProductsService } from './products.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+import { PaginationDto } from 'src/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+
+@Controller('products')
+export class ProductsController {
+  constructor(private readonly productsService: ProductsService) { }
+
+  //cuando existen @Post() y @MessagePattern() es porque es un microsercicio hibrido
+  // @Post()
+  @MessagePattern({ cmd: 'create_product' })
+  create(@Payload() createProductDto: CreateProductDto) { //sustituir @Body() por @Payload()
+    return this.productsService.create(createProductDto);
+  }
+
+  // @Get()
+  @MessagePattern({ cmd: 'find_all_product' }) //sustituir @Query() por @Payload()
+  findAll(
+    @Payload() paginationDto: PaginationDto //para manejar la paginacion
+  ) {
+    return this.productsService.findAll(paginationDto);
+  }
+
+  // @Get(':id')
+  @MessagePattern({ cmd: 'find_one_product' }) //sustituir @Param() por @Payload()
+  findOne(@Payload( 'id', ParseIntPipe ) id: number) {
+    return this.productsService.findOne(+id);
+  }
+
+  // @Patch(':id')
+  @MessagePattern({ cmd: 'update_product' }) //sustituir @Param() por @Payload()
+  update(
+    // @Param('id', ParseIntPipe) id: number,
+    // @Body() updateProductDto: UpdateProductDto
+    @Payload() updateProductDto: UpdateProductDto,
+  ) {
+    return this.productsService.update(updateProductDto.id, updateProductDto);
+  }
+
+  // @Delete(':id')
+  @MessagePattern({ cmd: 'delete_product' })
+  remove(
+    @Payload('id', ParseIntPipe) id: number
+  ) {
+    return this.productsService.remove(id);
+  }
+}
